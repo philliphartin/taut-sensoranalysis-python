@@ -47,6 +47,7 @@ def fetch_data(working_directory, database_folder, sensor_folder, csv_log_file):
 
                         for file in files:
                             if file.__contains__(unixtime):
+
                                 # Get Sensor Type
                                 sensor_type = FileChecker.what_is_sensor_type(file)
                                 # Get absolute file path
@@ -54,7 +55,6 @@ def fetch_data(working_directory, database_folder, sensor_folder, csv_log_file):
 
                                 sensor_info = {'type': sensor_type, 'filepath': file_path}
                                 sensors.append(sensor_info)
-                                # print(sensor_info)
 
                 reminder_details = {'row_id': row_id, 'unixtime': unixtime, 'acknowledged': acknowledged,
                                     'sensor_info': sensors}

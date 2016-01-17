@@ -97,7 +97,7 @@ def process_timeseries(file_path, window_start_time, window_end_time):
             # if the start and end are both 0 then skip calculations for the file,
             # otherwise splice the data and calculate the features
 
-            stats_features = []
+            stats_features = {} # empty dictionary
 
             if window_index_conditions_valid(window_start_index, window_end_index):
                 # make slices of data using indexes
@@ -113,10 +113,10 @@ def process_timeseries(file_path, window_start_time, window_end_time):
                 stats_z = produce_stats_for_data_stream(sci_z)
                 stats_mag = produce_stats_for_data_stream(sci_mag)
 
-                stats_features.append(stats_x)
-                stats_features.append(stats_y)
-                stats_features.append(stats_z)
-                stats_features.append(stats_mag)
+                stats_features['x'] = stats_x
+                stats_features['y'] = stats_y
+                stats_features['z'] = stats_z
+                stats_features['mag'] = stats_mag
 
             return stats_features
 

@@ -1,8 +1,9 @@
 __author__ = 'philliphartin'
 
+import pickle
+
 import DataPrep
 import SensorFileProcessor
-import csv
 
 root_folder = '/Users/philliphartin'
 taut_folder = '/TAUT'
@@ -16,7 +17,7 @@ window_size_seconds = 15  # change this value to adjust window size
 
 prepped_data = DataPrep.fetch_data(working_directory, database_folder, sensor_folder, csv_log_file)
 
-master_data_set = []
+master_data_set = {}
 
 for key_patient_id, value_data in prepped_data.items():
 
@@ -24,7 +25,8 @@ for key_patient_id, value_data in prepped_data.items():
 
     for reminders in value_data:
 
-        master_data_sensors = []
+        # master_data_sensors = []
+        master_data_sensors = {}
 
         for key_reminder, value_reminder in reminders.items():
             sensor_info = value_reminder['sensor_info']
@@ -47,22 +49,20 @@ for key_patient_id, value_data in prepped_data.items():
                     # if there is a feature object, and it isn't empty
                     # write them to users_data
                     if features is not None and len(features) != 0:
-                        features_to_save = {'sensor': sensor_type, 'features': features, }
-                        master_data_sensors.append(features_to_save)
+                        master_data_sensors[sensor_type] = features
 
                 elif sensor_type in ('proximity', 'light', 'temp', 'gps'):
                     features = SensorFileProcessor.process_discrete(file_path, window_start_time, window_end_time)
 
         # Save the reminder data and embed the recorded sensor data
-        reminder_to_save = {'label': acknowledged, 'sensors': master_data_sensors}
+        reminder_to_save = {'acknowledged': acknowledged, 'sensors': master_data_sensors}
         master_data_user.append(reminder_to_save)
 
     # Save all the data for the user and append to master data set list
-    user_to_save = {'patientid': key_patient_id, 'data': master_data_user}
-    master_data_set.append(user_to_save)
+    master_data_set[key_patient_id] = master_data_user
+
+# Use pickle to save object to local disk for faster testing
+pickle.dump(master_data_set, open("output/save.p", "wb"))
 
 # TODO: Write results to a csv file.
-# One for each user and one master file.
-with open('output.csv', 'w', newline='') as newfile:
-    writer = csv.writer(newfile)
-    writer.writerows(master_data_set)
+# OutputWriter
