@@ -118,6 +118,8 @@ def process_timeseries(file_path, window_start_time, window_end_time):
                 stats_features.append(stats_z)
                 stats_features.append(stats_mag)
 
+            return stats_features
+
 
 def process_discrete(file_path, window_start_time, window_end_time):
     with open(file_path) as csv_sensorfile:

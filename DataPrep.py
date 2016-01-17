@@ -4,7 +4,7 @@ import os
 import FileChecker
 
 # manual user list
-id_list = ['2354']
+id_list = ['1196']
 
 
 # Get list of users from sensor directory folder names
