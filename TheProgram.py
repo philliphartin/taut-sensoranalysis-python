@@ -25,7 +25,6 @@ for key_patient_id, value_data in prepped_data.items():
 
     for reminders in value_data:
 
-        # master_data_sensors = []
         master_data_sensors = {}
 
         for key_reminder, value_reminder in reminders.items():

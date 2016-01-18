@@ -10,6 +10,20 @@ def rms(x, axis=None):
     return np.sqrt(np.mean(x ** 2, axis=axis))
 
 
+def calculate_window_indexes(timestamps, window_start_time, window_end_time):
+    # find timestamp in array, find the row index, and record
+    # original times are stored in seconds, scale up to milliseconds by *1000
+    window_start_time_milli = float(window_start_time * 1000)
+    window_end_time_milli = float(window_end_time * 1000)
+
+    # use bisect sorting algorithm to returns an insertion point
+    # which comes after (to the right of) any existing entries of window_time in timestamp_list.
+    window_start_index = bisect.bisect(timestamps, window_start_time_milli)
+    window_end_index = bisect.bisect(timestamps, window_end_time_milli)
+
+    return window_start_index, window_end_index
+
+
 def produce_stats_for_data_stream(axis_data):
     # Stats
     data_mean = np.mean(axis_data)
@@ -64,59 +78,50 @@ def process_timeseries(file_path, window_start_time, window_end_time):
         print('Opening: ' + file_path)
 
         sensorfile = csv.reader(csv_sensorfile, delimiter=',', quotechar='|')
-
-        all_array = []
+        sensor_rows = []
 
         for row in sensorfile:
             # the correct format has 4 elements (avoids header and footer rows)
             if len(row) == 4:
-                # method only works for acclerometer and Magnetometer data
+                # method only works for accelerometer and Magnetometer data
                 timestamp = int(row[0])
                 x = float(row[1])
                 y = float(row[2])
                 z = float(row[3])
-                all_array.append([timestamp, x, y, z])
+                sensor_rows.append([timestamp, x, y, z])
 
         # if data exists
-        if len(all_array) != 0:
+        if len(sensor_rows) != 0:
             # convert basic python lists to numPy arrays using slices
-            sci_all_array = np.array(all_array)
-            sci_timestamp = sci_all_array[:, 0]
-            sci_timestamp_list = sci_timestamp.tolist()  # convert to list for sorting algorithm
+            sensor_rows = np.array(sensor_rows)
+            timestamps = sensor_rows[:, 0].tolist() # convert to list for sorting algorithm
 
-            # find timestamp in array, find the row index, and record
-            # original times are stored in seconds, scale up to milliseconds by *1000
-            window_start_time_milli = float(window_start_time * 1000)
-            window_end_time_milli = float(window_end_time * 1000)
+            # calculate window indexes
+            window_indexes = calculate_window_indexes(timestamps, window_start_time, window_end_time)
+            window_start_index = window_indexes[0]
+            window_end_index = window_indexes[1]
 
-            # use bisect sorting algorithm to returns an insertion point
-            # which comes after (to the right of) any existing entries of window_time in timestamp_list.
-            window_start_index = bisect.bisect(sci_timestamp_list, window_start_time_milli)
-            window_end_index = bisect.bisect(sci_timestamp_list, window_end_time_milli)
+            # dictionary to hold features for each sensor axis
+            stats_features = {'x': None, 'y': None, 'z': None, 'xyz': None}
 
             # if the start and end are both 0 then skip calculations for the file,
             # otherwise splice the data and calculate the features
-
-            stats_features = {} # empty dictionary
-
             if window_index_conditions_valid(window_start_index, window_end_index):
                 # make slices of data using indexes
-                sci_x = sci_all_array[window_start_index:window_end_index, 1]
-                sci_y = sci_all_array[window_start_index:window_end_index, 2]
-                sci_z = sci_all_array[window_start_index:window_end_index, 3]
+                x_win = sensor_rows[window_start_index:window_end_index, 1]
+                y_win = sensor_rows[window_start_index:window_end_index, 2]
+                z_win = sensor_rows[window_start_index:window_end_index, 3]
+                xyz_win = get_magnitude(x_win, y_win, z_win)  # calculate magnitude
 
-                # calculate magnitude
-                sci_mag = get_magnitude(sci_x, sci_y, sci_z)
-
-                stats_x = produce_stats_for_data_stream(sci_x)
-                stats_y = produce_stats_for_data_stream(sci_y)
-                stats_z = produce_stats_for_data_stream(sci_z)
-                stats_mag = produce_stats_for_data_stream(sci_mag)
+                stats_x = produce_stats_for_data_stream(x_win)
+                stats_y = produce_stats_for_data_stream(y_win)
+                stats_z = produce_stats_for_data_stream(z_win)
+                stats_xyz = produce_stats_for_data_stream(xyz_win)
 
                 stats_features['x'] = stats_x
                 stats_features['y'] = stats_y
                 stats_features['z'] = stats_z
-                stats_features['mag'] = stats_mag
+                stats_features['xyz'] = stats_xyz
 
             return stats_features
 
