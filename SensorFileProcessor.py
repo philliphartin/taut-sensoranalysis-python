@@ -10,6 +10,15 @@ def rms(x, axis=None):
     return np.sqrt(np.mean(x ** 2, axis=axis))
 
 
+def process_data(sensor_type, file_path, window_start_time, window_end_time):
+    if sensor_type in ('accelerometer', 'magnetic', 'gyroscope'):
+        features = process_timeseries(file_path, window_start_time, window_end_time)
+        return features
+    elif sensor_type in ('proximity', 'light', 'temp', 'gps'):
+        features = process_discrete(file_path, window_start_time, window_end_time)
+        return features
+
+
 def calculate_window_indexes(timestamps, window_start_time, window_end_time):
     # find timestamp in array, find the row index, and record
     # original times are stored in seconds, scale up to milliseconds by *1000
@@ -21,6 +30,7 @@ def calculate_window_indexes(timestamps, window_start_time, window_end_time):
     window_start_index = bisect.bisect(timestamps, window_start_time_milli)
     window_end_index = bisect.bisect(timestamps, window_end_time_milli)
 
+    # TODO: For discrete time-series, if a reading exists before the start_index_use it
     return window_start_index, window_end_index
 
 
@@ -90,11 +100,13 @@ def process_timeseries(file_path, window_start_time, window_end_time):
                 z = float(row[3])
                 sensor_rows.append([timestamp, x, y, z])
 
+        stats_features = {'x': None, 'y': None, 'z': None, 'xyz': None}
+
         # if data exists
         if len(sensor_rows) != 0:
             # convert basic python lists to numPy arrays using slices
             sensor_rows = np.array(sensor_rows)
-            timestamps = sensor_rows[:, 0].tolist() # convert to list for sorting algorithm
+            timestamps = sensor_rows[:, 0].tolist()  # convert to list for sorting algorithm
 
             # calculate window indexes
             window_indexes = calculate_window_indexes(timestamps, window_start_time, window_end_time)
@@ -102,7 +114,6 @@ def process_timeseries(file_path, window_start_time, window_end_time):
             window_end_index = window_indexes[1]
 
             # dictionary to hold features for each sensor axis
-            stats_features = {'x': None, 'y': None, 'z': None, 'xyz': None}
 
             # if the start and end are both 0 then skip calculations for the file,
             # otherwise splice the data and calculate the features
@@ -123,7 +134,7 @@ def process_timeseries(file_path, window_start_time, window_end_time):
                 stats_features['z'] = stats_z
                 stats_features['xyz'] = stats_xyz
 
-            return stats_features
+        return stats_features
 
 
 def process_discrete(file_path, window_start_time, window_end_time):
@@ -131,6 +142,38 @@ def process_discrete(file_path, window_start_time, window_end_time):
         print('Opening: ' + file_path)
 
         sensorfile = csv.reader(csv_sensorfile, delimiter=',', quotechar='|')
+        sensor_rows = []
+
+        # dictionary to hold features
+        stats_features = {'measure': None}
+
+        for row in sensorfile:
+            # the correct format has 4 elements (avoids header and footer rows)
+            if len(row) == 4:
+                timestamp = int(row[0])
+                measure = float(row[1])
+                sensor_rows.append([timestamp, measure])
+
+        # if data exists
+        if len(sensor_rows) != 0:
+            # convert basic python lists to numPy arrays using slices
+            sensor_rows = np.array(sensor_rows)
+            timestamps = sensor_rows[:, 0].tolist()  # convert to list for sorting algorithm
+
+            # calculate window indexes
+            window_indexes = calculate_window_indexes(timestamps, window_start_time, window_end_time)
+            window_start_index = window_indexes[0]
+            window_end_index = window_indexes[1]
+            # if the start and end are both 0 then skip calculations for the file,
+            # otherwise splice the data and calculate the features
+            if window_index_conditions_valid(window_start_index, window_end_index):
+                # make slices of data using indexes
+                measures_win = sensor_rows[window_start_index:window_end_index, 1]
+
+                stats_x = produce_stats_for_data_stream(measures_win)
+                stats_features['measure'] = stats_x
+
+        return stats_features
 
 
 def get_magnitude(x, y, z):

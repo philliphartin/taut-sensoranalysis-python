@@ -40,21 +40,12 @@ for key_patient_id, value_data in prepped_data.items():
             for sensorfile in sensor_info:
                 file_path = sensorfile['filepath']
                 sensor_type = sensorfile['type']
-
-                # TODO: Create an array to hold the values passed back from the processing methods
                 # Establish sensor_type and pass data to be processed
-                if sensor_type in ('accelerometer', 'magnetic', 'gyroscope'):
-                    features = SensorFileProcessor.process_timeseries(file_path, window_start_time, window_end_time)
-                    # if there is a feature object, and it isn't empty
-                    # write them to users_data
-                    if features is not None and len(features) != 0:
-                        master_data_sensors[sensor_type] = features
+                features = SensorFileProcessor.process_data(sensor_type, file_path, window_start_time, window_end_time)
+                master_data_sensors[sensor_type] = features
 
-                elif sensor_type in ('proximity', 'light', 'temp', 'gps'):
-                    features = SensorFileProcessor.process_discrete(file_path, window_start_time, window_end_time)
-
-        # Save the reminder data and embed the recorded sensor data
-        reminder_to_save = {'acknowledged': acknowledged, 'sensors': master_data_sensors}
+                # Save the reminder data and embed the recorded sensor data
+        reminder_to_save = {'acknowledged': acknowledged, 'unixtime': unixtime, 'sensors': master_data_sensors}
         master_data_user.append(reminder_to_save)
 
     # Save all the data for the user and append to master data set list

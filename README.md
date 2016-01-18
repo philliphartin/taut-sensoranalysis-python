@@ -2,6 +2,7 @@
 ###### Supporting Python scripts for analysis of TAUT study data
 
 Scripts originally designed to analyse data for Chapter 3 of PhD thesis: *A Data-Driven Contextual Reminder Delivery Framework*
+
 Full manuscript available here: (//TODO)
 
 ## Description
