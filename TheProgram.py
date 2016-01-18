@@ -3,6 +3,7 @@ __author__ = 'philliphartin'
 import pickle
 
 import DataPrep
+import OutputWriter
 import SensorFileProcessor
 
 root_folder = '/Users/philliphartin'
@@ -38,9 +39,10 @@ for key_patient_id, value_data in prepped_data.items():
 
             # Iterate through the list of sensors
             for sensorfile in sensor_info:
+                # TODO: Record the type o
                 file_path = sensorfile['filepath']
                 sensor_type = sensorfile['type']
-                # Establish sensor_type and pass data to be processed
+
                 features = SensorFileProcessor.process_data(sensor_type, file_path, window_start_time, window_end_time)
                 master_data_sensors[sensor_type] = features
 
@@ -55,4 +57,4 @@ for key_patient_id, value_data in prepped_data.items():
 pickle.dump(master_data_set, open("output/save.p", "wb"))
 
 # TODO: Write results to a csv file.
-# OutputWriter
+OutputWriter.write_data(master_data_set)

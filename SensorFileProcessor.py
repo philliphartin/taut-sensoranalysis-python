@@ -12,9 +12,9 @@ def rms(x, axis=None):
 
 def process_data(sensor_type, file_path, window_start_time, window_end_time):
     if sensor_type in ('accelerometer', 'magnetic', 'gyroscope'):
-        features = process_timeseries(file_path, window_start_time, window_end_time)
+        features = process_triaxial(file_path, window_start_time, window_end_time)
         return features
-    elif sensor_type in ('proximity', 'light', 'temp', 'gps'):
+    elif sensor_type in ('proximity', 'light', 'temp'):
         features = process_discrete(file_path, window_start_time, window_end_time)
         return features
 
@@ -34,7 +34,36 @@ def calculate_window_indexes(timestamps, window_start_time, window_end_time):
     return window_start_index, window_end_index
 
 
-def produce_stats_for_data_stream(axis_data):
+def produce_empty_stats_dictionary():
+    # Empty stats for missing data
+    values = {'mean': None,
+              'med': None,
+              'max': None,
+              'min': None,
+              'var': None,
+              'std': None,
+              'sum': None,
+              'rng': None,
+              'rms': None,
+              'percentile_25': None,
+              'percentile_75': None}
+    return values
+
+
+def produce_empty_triaxial_sensor_dict(dictionary):
+    dictionary.update({'x': produce_empty_stats_dictionary(),
+                       'y': produce_empty_stats_dictionary(),
+                       'z': produce_empty_stats_dictionary(),
+                       'xyz': produce_empty_stats_dictionary()})
+    return dictionary
+
+
+def produce_empty_discrete_sensor_dict(dictionary):
+    dictionary.update({'measure': produce_empty_stats_dictionary()})
+    return dictionary
+
+
+def calc_stats_for_data_stream_as_dictionary(axis_data):
     # Stats
     data_mean = np.mean(axis_data)
     data_med = np.median(axis_data)
@@ -69,23 +98,28 @@ def produce_stats_for_data_stream(axis_data):
 
 
 def window_index_conditions_valid(start, end):
-    # Start window must be before end
+    # Return false if the start and end are both 0
+    # or
+    # if end window is before start
     if start < end:
         condition1 = True
     else:
         condition1 = False
 
     # Start and End must not be 0 (Empty range)
-    if start and end != 0:
+    if start != 0 and end != 0:
         condition2 = True
     else:
         condition2 = False
     return condition1 and condition2
 
 
-def process_timeseries(file_path, window_start_time, window_end_time):
+def process_triaxial(file_path, window_start_time, window_end_time):
     with open(file_path) as csv_sensorfile:
         print('Opening: ' + file_path)
+
+        # dictionary to hold features
+        features = {}
 
         sensorfile = csv.reader(csv_sensorfile, delimiter=',', quotechar='|')
         sensor_rows = []
@@ -100,41 +134,45 @@ def process_timeseries(file_path, window_start_time, window_end_time):
                 z = float(row[3])
                 sensor_rows.append([timestamp, x, y, z])
 
-        stats_features = {'x': None, 'y': None, 'z': None, 'xyz': None}
-
-        # if data exists
-        if len(sensor_rows) != 0:
+        # if no data exists generate empty stats
+        # otherwise calculate stats
+        if not sensor_rows:
+            features = produce_empty_triaxial_sensor_dict(features)
+        else:
             # convert basic python lists to numPy arrays using slices
             sensor_rows = np.array(sensor_rows)
-            timestamps = sensor_rows[:, 0].tolist()  # convert to list for sorting algorithm
+            # convert to list for sorting algorithm
+            timestamps = sensor_rows[:, 0].tolist()
 
             # calculate window indexes
             window_indexes = calculate_window_indexes(timestamps, window_start_time, window_end_time)
             window_start_index = window_indexes[0]
             window_end_index = window_indexes[1]
+            # validate window indexes
+            window_indexes_valid = window_index_conditions_valid(window_start_index, window_end_index)
 
-            # dictionary to hold features for each sensor axis
-
-            # if the start and end are both 0 then skip calculations for the file,
-            # otherwise splice the data and calculate the features
-            if window_index_conditions_valid(window_start_index, window_end_index):
+            # if valid, window the data, and calculate stats
+            if window_indexes_valid:
                 # make slices of data using indexes
                 x_win = sensor_rows[window_start_index:window_end_index, 1]
                 y_win = sensor_rows[window_start_index:window_end_index, 2]
                 z_win = sensor_rows[window_start_index:window_end_index, 3]
-                xyz_win = get_magnitude(x_win, y_win, z_win)  # calculate magnitude
+                xyz_win = get_magnitude(x_win, y_win, z_win)
 
-                stats_x = produce_stats_for_data_stream(x_win)
-                stats_y = produce_stats_for_data_stream(y_win)
-                stats_z = produce_stats_for_data_stream(z_win)
-                stats_xyz = produce_stats_for_data_stream(xyz_win)
+                # calculate stats
+                stats_x = calc_stats_for_data_stream_as_dictionary(x_win)
+                stats_y = calc_stats_for_data_stream_as_dictionary(y_win)
+                stats_z = calc_stats_for_data_stream_as_dictionary(z_win)
+                stats_xyz = calc_stats_for_data_stream_as_dictionary(xyz_win)
 
-                stats_features['x'] = stats_x
-                stats_features['y'] = stats_y
-                stats_features['z'] = stats_z
-                stats_features['xyz'] = stats_xyz
+                features.update({'x': stats_x,
+                                 'y': stats_y,
+                                 'z': stats_z,
+                                 'xyz': stats_xyz})
+            else:
+                features = produce_empty_triaxial_sensor_dict(features)
 
-        return stats_features
+        return features
 
 
 def process_discrete(file_path, window_start_time, window_end_time):
@@ -142,11 +180,11 @@ def process_discrete(file_path, window_start_time, window_end_time):
         print('Opening: ' + file_path)
 
         sensorfile = csv.reader(csv_sensorfile, delimiter=',', quotechar='|')
-        sensor_rows = []
 
         # dictionary to hold features
-        stats_features = {'measure': None}
+        features = {}
 
+        sensor_rows = []
         for row in sensorfile:
             # the correct format has 4 elements (avoids header and footer rows)
             if len(row) == 4:
@@ -154,8 +192,9 @@ def process_discrete(file_path, window_start_time, window_end_time):
                 measure = float(row[1])
                 sensor_rows.append([timestamp, measure])
 
-        # if data exists
-        if len(sensor_rows) != 0:
+        if not sensor_rows:
+            features = produce_empty_discrete_sensor_dict(features)
+        else:
             # convert basic python lists to numPy arrays using slices
             sensor_rows = np.array(sensor_rows)
             timestamps = sensor_rows[:, 0].tolist()  # convert to list for sorting algorithm
@@ -164,16 +203,18 @@ def process_discrete(file_path, window_start_time, window_end_time):
             window_indexes = calculate_window_indexes(timestamps, window_start_time, window_end_time)
             window_start_index = window_indexes[0]
             window_end_index = window_indexes[1]
-            # if the start and end are both 0 then skip calculations for the file,
-            # otherwise splice the data and calculate the features
-            if window_index_conditions_valid(window_start_index, window_end_index):
+            window_indexes_valid = window_index_conditions_valid(window_start_index, window_end_index)
+
+            # if valid, window the data, and calculate stats
+            if window_indexes_valid:
                 # make slices of data using indexes
                 measures_win = sensor_rows[window_start_index:window_end_index, 1]
+                stats_reading = calc_stats_for_data_stream_as_dictionary(measures_win)
+                features.update({'measure': stats_reading})
+            else:
+                features = produce_empty_discrete_sensor_dict(features)
 
-                stats_x = produce_stats_for_data_stream(measures_win)
-                stats_features['measure'] = stats_x
-
-        return stats_features
+        return features
 
 
 def get_magnitude(x, y, z):
