@@ -1,6 +1,9 @@
 import csv
 from collections import OrderedDict
 
+import Emailer
+import HiddenEmail
+
 
 def traverse(d, sep='_', _prefix=''):
     assert isinstance(d, dict)
@@ -49,3 +52,7 @@ def write_data_to_csv(data):
         writer.writeheader()
         for entry in data:
             writer.writerow(entry)
+
+
+Emailer.mail(HiddenEmail.__email__, 'Python TAUT sensor feature analysis complete',
+             'File has been saved, GREAT SUCCESS!')
