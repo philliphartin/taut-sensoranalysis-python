@@ -1,9 +1,10 @@
-__author__ = 'philliphartin'
-
 import bisect
 import csv
 
 import numpy as np
+
+sensors_triaxial = ('accelerometer', 'magnetic', 'gyroscope')
+sensors_discrete = ('light', 'proximity', 'temp')
 
 
 def rms(x, axis=None):
@@ -11,10 +12,10 @@ def rms(x, axis=None):
 
 
 def process_data(sensor_type, file_path, window_start_time, window_end_time):
-    if sensor_type in ('accelerometer', 'magnetic', 'gyroscope'):
+    if sensor_type in sensors_triaxial:
         features = process_triaxial(file_path, window_start_time, window_end_time)
         return features
-    elif sensor_type in ('proximity', 'light', 'temp'):
+    elif sensor_type in sensors_discrete:
         features = process_discrete(file_path, window_start_time, window_end_time)
         return features
 
@@ -50,7 +51,8 @@ def produce_empty_stats_dictionary():
     return values
 
 
-def produce_empty_triaxial_sensor_dict(dictionary):
+# default dictionary is empty dic
+def produce_empty_triaxial_sensor_dict(dictionary={}):
     dictionary.update({'x': produce_empty_stats_dictionary(),
                        'y': produce_empty_stats_dictionary(),
                        'z': produce_empty_stats_dictionary(),
@@ -58,7 +60,7 @@ def produce_empty_triaxial_sensor_dict(dictionary):
     return dictionary
 
 
-def produce_empty_discrete_sensor_dict(dictionary):
+def produce_empty_discrete_sensor_dict(dictionary={}):
     dictionary.update({'measure': produce_empty_stats_dictionary()})
     return dictionary
 

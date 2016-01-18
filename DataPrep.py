@@ -2,15 +2,17 @@ import csv
 import os
 
 import FileChecker
+import SensorFileProcessor
+
 
 # manual user list
-id_list = ['1196']
+# id_list = ['1196']
 
-
-# Get list of users from sensor directory folder names
-# id_list = next(os.walk(working_directory+sensor_folder))[1]
 
 def fetch_data(working_directory, database_folder, sensor_folder, csv_log_file):
+    # Get list of users from sensor directory folder names
+    id_list = next(os.walk(working_directory + sensor_folder))[1]
+
     # Read in csv file
     # create dictionary using the first row as keys
     # write dictionary to new variable - reminders, so that CSV file handler can be closed.
@@ -50,11 +52,14 @@ def fetch_data(working_directory, database_folder, sensor_folder, csv_log_file):
 
                                 # Get Sensor Type
                                 sensor_type = FileChecker.what_is_sensor_type(file)
-                                # Get absolute file path
-                                file_path = (os.path.abspath(os.path.join(root, file)))
 
-                                sensor_info = {'type': sensor_type, 'filepath': file_path}
-                                sensors.append(sensor_info)
+                                # if sensor belongs to triaxial or discrete, save the data
+                                if (sensor_type in SensorFileProcessor.sensors_triaxial or
+                                            sensor_type in SensorFileProcessor.sensors_discrete):
+                                    # Get absolute file path
+                                    file_path = (os.path.abspath(os.path.join(root, file)))
+                                    sensor_info = {'type': sensor_type, 'filepath': file_path}
+                                    sensors.append(sensor_info)
 
                 reminder_details = {'row_id': row_id, 'unixtime': unixtime, 'acknowledged': acknowledged,
                                     'sensor_info': sensors}

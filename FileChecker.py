@@ -1,6 +1,3 @@
-__author__ = 'philliphartin'
-
-
 def what_is_sensor_type(filename):
     if filename.__contains__('Accelerometer'):
         return 'accelerometer'
