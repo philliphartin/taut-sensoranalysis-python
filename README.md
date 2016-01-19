@@ -18,7 +18,8 @@ The program works in the following manner:
 4. When match is found sensor file is processed
 5. Establishes cutoff indexes based on defined window length
 6. Produces descriptive statistics for windowed signal, incl. rms (root mean square), svm (signal vector magnitude)
-7. Collates the data and writes to an external csv file for further analysis (Weka, Hadoop, etc.)
+7. Writes the features to a sorted and labelled external csv file for further analysis (Weka, Hadoop, etc.)
+8. Imports CSV file and then outputs a Weka .arff file
 
 ## Dependencies
 * NumPy ([link](http://www.numpy.org))

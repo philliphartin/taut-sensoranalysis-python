@@ -30,3 +30,4 @@ def mail(to, subject, text, attach=None):
     mailServer.login(gmail_user, gmail_pwd)
     mailServer.sendmail(gmail_user, to, msg.as_string())
     mailServer.close()
+    print('Email Sent...')

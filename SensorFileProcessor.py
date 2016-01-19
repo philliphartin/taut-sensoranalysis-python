@@ -37,17 +37,18 @@ def calculate_window_indexes(timestamps, window_start_time, window_end_time):
 
 def produce_empty_stats_dictionary():
     # Empty stats for missing data
-    values = {'mean': None,
-              'med': None,
-              'max': None,
-              'min': None,
-              'var': None,
-              'std': None,
-              'sum': None,
-              'rng': None,
-              'rms': None,
-              'percentile_25': None,
-              'percentile_75': None}
+    # Question marks used for WEKA arff file formatting
+    values = {'mean': '?',
+              'med': '?',
+              'max': '?',
+              'min': '?',
+              'var': '?',
+              'std': '?',
+              'sum': '?',
+              'rng': '?',
+              'rms': '?',
+              'percentile_25': '?',
+              'percentile_75': '?'}
     return values
 
 
@@ -118,7 +119,7 @@ def window_index_conditions_valid(start, end):
 
 def process_triaxial(file_path, window_start_time, window_end_time):
     with open(file_path) as csv_sensorfile:
-        print('Opening: ' + file_path)
+        # print('Opening: ' + file_path)
 
         # dictionary to hold features
         features = {}
@@ -129,12 +130,14 @@ def process_triaxial(file_path, window_start_time, window_end_time):
         for row in sensorfile:
             # the correct format has 4 elements (avoids header and footer rows)
             if len(row) == 4:
-                # method only works for accelerometer and Magnetometer data
-                timestamp = int(row[0])
-                x = float(row[1])
-                y = float(row[2])
-                z = float(row[3])
-                sensor_rows.append([timestamp, x, y, z])
+                try:
+                    timestamp = int(row[0])
+                    x = float(row[1])
+                    y = float(row[2])
+                    z = float(row[3])
+                    sensor_rows.append([timestamp, x, y, z])
+                except ValueError:
+                    continue
 
         # if no data exists generate empty stats
         # otherwise calculate stats
@@ -190,9 +193,12 @@ def process_discrete(file_path, window_start_time, window_end_time):
         for row in sensorfile:
             # the correct format has 4 elements (avoids header and footer rows)
             if len(row) == 4:
-                timestamp = int(row[0])
-                measure = float(row[1])
-                sensor_rows.append([timestamp, measure])
+                try:
+                    timestamp = int(row[0])
+                    measure = float(row[1])
+                    sensor_rows.append([timestamp, measure])
+                except ValueError:
+                    continue
 
         if not sensor_rows:
             features = produce_empty_discrete_sensor_dict(features)

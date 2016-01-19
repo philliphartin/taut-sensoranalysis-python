@@ -52,9 +52,15 @@ for key_patient_id, value_data in prepped_data.items():
                 master_data_sensors[sensor_type] = features
                 sensors_processed[sensor_type] = True
 
-            # Generate fake data for any missing sensors processed.
+            # Create list of missing sensor types
             missing_sensor_types = find_key(sensors_processed, False)
+
+            # Generate fake data for any missing sensors processed.
             if missing_sensor_types:
+                #  TODO: IF ALL MISSING, SKIP ENTIRE THING
+                if len(sensors_processed) == len(missing_sensor_types):
+                    continue
+
                 for missing_sensor in missing_sensor_types:
                     # establish missing file type (triaxial or discrete?)
                     # create fake data depending on sensor type and save
@@ -66,11 +72,12 @@ for key_patient_id, value_data in prepped_data.items():
                         fake_data = SensorFileProcessor.produce_empty_triaxial_sensor_dict()
                         master_data_sensors[missing_sensor] = fake_data
 
-        # Save the reminder data and embed the recorded sensor data
-        reminder_to_save = {'acknowledged': acknowledged, 'unixtime': unixtime, 'sensors': master_data_sensors}
-        master_data_user.append(reminder_to_save)
+        # If data exists, save the reminder data and embed the recorded sensor data
+        if master_data_sensors:
+            reminder_to_save = {'acknowledged': acknowledged, 'unixtime': unixtime, 'sensors': master_data_sensors}
+            master_data_user.append(reminder_to_save)
 
-    # Save all the data for the user and append to master data set list
+            # Save all the data for the user and append to master data set list
     master_data_set[key_patient_id] = master_data_user
 
 # Use pickle to save object to local disk for faster testing
@@ -78,4 +85,4 @@ pickle.dump(master_data_set, open("output/save.p", "wb"))
 
 # Write results to a csv file.
 results = OutputWriter.prepare_data(master_data_set)
-OutputWriter.write_data_to_csv(results)
+OutputWriter.write_data_to_disk(results)
