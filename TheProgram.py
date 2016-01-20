@@ -81,7 +81,7 @@ for key_patient_id, value_data in prepped_data.items():
     master_data_set[key_patient_id] = master_data_user
 
 # Use pickle to save object to local disk for faster testing
-pickle.dump(master_data_set, open("output/save.p", "wb"))
+pickle.dump(master_data_set, open('pickle.p', "wb"))
 
 # Write results to a csv file.
 results = OutputWriter.prepare_data(master_data_set)

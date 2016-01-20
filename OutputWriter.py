@@ -1,17 +1,28 @@
 import csv
+import pickle
 import time
 from collections import OrderedDict
 
 from arff import arff
 
-outdirectory = 'output/'
-features_csv_output = 'output.csv'
-features_arff_output = 'output.arff'
+# Folder Structure
+pickle_data = 'save.p'
 
 
 def get_timestamp():
-    timestr = time.strftime("%Y%m%d-%H%M%S")
+    timestr = time.strftime("%Y%m%d-%H%M")
     return timestr
+
+
+def create_time_folder():
+    import os
+    newpath = 'output/' + get_timestamp()
+    if not os.path.exists(newpath):
+        os.makedirs(newpath)
+    return newpath
+
+
+out_dir = create_time_folder()
 
 
 def traverse(d, sep='_', _prefix=''):
@@ -54,20 +65,25 @@ def prepare_data(master_data_set):
 
 def write_data_to_disk(data):
     try:
-        write_raw_data_to_csv(data)
-    except Exception:
-        print('Failed')
+        csv_raw_filepath = write_to_csv(data)
+    except Exception as e:
+        print(e)
     else:
-        convert_raw_csv_to_ordered()
+        csv_ord_filepath = convert_raw_csv_to_ordered(csv_raw_filepath)
+        convert_ordered_csv_to_weka(csv_ord_filepath)
 
 
-def write_raw_data_to_csv(data):
-    with open(outdirectory + features_csv_output, 'w') as csvfile:
+def write_to_csv(data):
+    filepath = out_dir + '/raw.csv'
+
+    with open(filepath, 'w') as csvfile:
         ordered_fieldnames = OrderedDict(data[0])
         writer = csv.DictWriter(csvfile, fieldnames=ordered_fieldnames)
         writer.writeheader()
         for entry in data:
             writer.writerow(entry)
+
+    return filepath
 
 
 def update_acknowledged_label(number):
@@ -79,22 +95,18 @@ def update_acknowledged_label(number):
         return 'Off'
 
 
-def convert_raw_csv_to_ordered():
+def convert_raw_csv_to_ordered(csv_raw_filepath):
     # read in previously generated csv feature list
     # get the headers, and order them
 
-    row_count = 0
+    filepath = out_dir + '/ordered.csv'
 
-    filepath_input = outdirectory + features_csv_output
-    filepath_output = outdirectory + 'ordered_' + get_timestamp() + '.csv'
-
-    with open(filepath_input) as csvfile:
-        print('Opening ' + outdirectory + features_csv_output)
+    with open(csv_raw_filepath) as csvfile:
         reader = csv.DictReader(csvfile)
         header = reader.fieldnames
         header_sorted = sorted(header)
 
-        with open(filepath_output, 'w') as ordered_file:
+        with open(filepath, 'w') as ordered_file:
             fieldnames = header_sorted
             writer = csv.DictWriter(ordered_file, fieldnames=fieldnames)
             writer.writeheader()
@@ -108,56 +120,89 @@ def convert_raw_csv_to_ordered():
                     continue
                 else:
                     writer.writerow(row)
-                    row_count = + 1
-
-    convert_ordered_csv_to_weka(filepath_output)
+    return filepath
 
 
-def convert_ordered_csv_to_weka(filepath):
-    print('Opening ' + filepath)
-
-    csv_headers = []
-    data = []
-    attributes = []
-
-    with open(filepath) as csvfile:
-        readcsv = csv.reader(csvfile, delimiter=',')
-        # csv_headers = readcsv.next()
-        # Save csv_headers
-        row_count = 0
-        for row in readcsv:
-            if row_count == 0:
-                csv_headers = row
-                row_count += 1
-            else:
-                data.append(row)
-                row_count += 1
-
-    # iterate the headings to correctly format the attribute types
-    for feature in csv_headers:
-        if feature == 'acknowledged':
-            attributes.append(('class', ['True', 'False']))
-        elif feature == 'userid':
-            attributes.append((feature, 'STRING'))
-        elif feature == 'unixtime':
-            attributes.append((feature, 'STRING'))
-        else:
-            attributes.append((feature, 'REAL'))
-
+def write_weka_file_for_cohort(data, attributes):
     weka_data = {
         'description': '',
         'relation': 'sensors',
         'attributes': attributes,
         'data': data,
     }
-
-    # Writes Weka formatted file to output folder
-    f = open(outdirectory + features_arff_output, 'w')
+    f = open(out_dir + '/cohort.arff', 'w')
     f.write(arff.dumps(weka_data))
     f.close()
 
+
+def write_weka_file_for_each_user(data, attributes):
+    all_users = {}
+
+    for row in data:
+        userid = row[len(row) - 1]  # User ID is the last element in list
+
+        # Get User data from row and add to user dictionary
+        # try to get existing key, and append to the existing list in value
+        try:
+            user_list = all_users[userid]
+            user_list.append(row)
+            all_users[userid] = user_list
+
+        except KeyError:
+            # If doesn't exist, create the list
+            user_list = [row]
+            all_users[userid] = user_list
+
+    for user, userdata in all_users.items():
+        weka_data = {
+            'description': 'Data for ' + user,
+            'relation': 'SensorRecordings',
+            'attributes': attributes,
+            'data': userdata,
+        }
+
+        # Write Weka formatted file for entire cohort
+        f = open(out_dir + '/' + user + '.arff', 'w')
+        f.write(arff.dumps(weka_data))
+        f.close()
+
+
+def convert_ordered_csv_to_weka(csv_ord_filepath):
+    headers = []
+    data = []
+    attributes = []
+
+    with open(csv_ord_filepath) as csvfile:
+        readcsv = csv.reader(csvfile, delimiter=',')
+        row_count = 0
+        for row in readcsv:
+            if row_count == 0:
+                # Save headers for features
+                headers = row
+                row_count += 1
+            else:
+                data.append(row)
+                row_count += 1
+
+    # iterate the headings to correctly format the attribute types
+    for attribute in headers:
+        if attribute == 'acknowledged':
+            attributes.append(('class', ['True', 'False']))
+        elif attribute == 'userid':
+            attributes.append((attribute, 'STRING'))
+        elif attribute == 'unixtime':
+            attributes.append((attribute, 'STRING'))
+        else:
+            attributes.append((attribute, 'REAL'))
+
+    write_weka_file_for_cohort(data, attributes)
+
+    # Write Weka format file for each user
+    write_weka_file_for_each_user(data, attributes)
+
+
 # FOR DEBUGGING
 # # # Use pickle to import object saved to disk
-# master_data_set = pickle.load(open("output/save.p", "rb"))
-# results = prepare_data(master_data_set)
-# write_data_to_disk(results)
+master_data_set = pickle.load(open('pickle.p', "rb"))
+results = prepare_data(master_data_set)
+write_data_to_disk(results)
