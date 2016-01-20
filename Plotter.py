@@ -3,8 +3,8 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 
-import SensorFileProcessor as sp
-import Filters as mf
+import sensorprocessor as sp
+import signalfilters as mf
 
 sensorfile = '/Users/philliphartin/TAUT/SensorRecordings/577/6/577_1396047090_Accelerometer.csv'
 
@@ -54,10 +54,12 @@ def plot_timeseries(data):
 
     numpymag = np.array(mag_series)
 
-    filtered = mf.medfilt(numpymag, 15)
+    filtered = mf.medfilt(numpymag, 11)
 
-    plt.plot(mag_series, 'r--')
-    plt.plot(filtered)
+    plt.plot(mag_series,)
+    # plt.plot(mf.medfilt(numpymag, 11), 'b')
+    plt.plot(mf.medfilt(numpymag, 15), 'r', linewidth=3.3)
+
     plt.show()
 
     # print(mag_fft)
@@ -78,6 +80,5 @@ def plot_timeseries(data):
     # plt.grid(True)
     # plt.savefig("test.png")
     # plt.show()
-
 
 plot_timeseries(import_sensorfile(sensorfile))

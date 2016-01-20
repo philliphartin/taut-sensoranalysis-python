@@ -1,8 +1,7 @@
 import csv
 import os
 
-import FileChecker
-import SensorFileProcessor
+import sensorprocessor
 
 
 # manual user list
@@ -51,11 +50,11 @@ def fetch_data(working_directory, database_folder, sensor_folder, csv_log_file):
                             if file.__contains__(unixtime):
 
                                 # Get Sensor Type
-                                sensor_type = FileChecker.what_is_sensor_type(file)
+                                sensor_type = sensorprocessor.what_is_sensor_type(file)
 
                                 # if sensor belongs to triaxial or discrete, save the data
-                                if (sensor_type in SensorFileProcessor.sensors_triaxial or
-                                            sensor_type in SensorFileProcessor.sensors_discrete):
+                                if (sensor_type in sensorprocessor.sensors_triaxial or
+                                            sensor_type in sensorprocessor.sensors_discrete):
                                     # Get absolute file path
                                     file_path = (os.path.abspath(os.path.join(root, file)))
                                     sensor_info = {'type': sensor_type, 'filepath': file_path}

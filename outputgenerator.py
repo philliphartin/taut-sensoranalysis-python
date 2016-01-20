@@ -1,12 +1,8 @@
 import csv
+import time
 from collections import OrderedDict
 
-import time
-
 from arff import arff
-
-# Folder Structure
-pickle_data = 'save.p'
 
 
 def get_timestamp():
@@ -213,8 +209,8 @@ def convert_ordered_csv_to_weka(csv_ord_filepath):
     # Write Weka format file for each user
     write_weka_file_for_each_user(data, attributes)
 
-# FOR DEBUGGING
-# # # Use pickle to import object saved to disk
-# master_data_set = pickle.load(open('pickle.p', "rb"))
-# results = prepare_data(master_data_set)
-# write_data_to_disk(results)
+    # FOR DEBUGGING
+    # # # Use pickle to import object saved to disk
+    # master_data_set = pickle.load(open('pickle.p', "rb"))
+    # results = prepare_data(master_data_set)
+    # write_data_to_disk(results)

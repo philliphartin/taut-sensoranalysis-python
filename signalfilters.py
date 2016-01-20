@@ -1,12 +1,10 @@
-#!/usr/bin/env python
-
 import numpy as np
 
 
 def medfilt(x, k):
-    """Apply a length-k median filter to a 1D array x.
-    Boundaries are extended by repeating endpoints.
-    """
+    # Apply a length-k median filter to a 1D array x.
+    # Boundaries are extended by repeating endpoints.
+
     assert k % 2 == 1, "Median filter length must be odd."
     assert x.ndim == 1, "Input must be one-dimensional."
     k2 = (k - 1) // 2

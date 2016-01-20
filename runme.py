@@ -1,8 +1,8 @@
 import pickle
 
-import DataPrep
-import OutputWriter
-import SensorFileProcessor
+import dataprep
+import outputgenerator
+import sensorprocessor
 
 root_folder = '/Users/philliphartin'
 taut_folder = '/TAUT'
@@ -20,7 +20,7 @@ def find_key(input_dict, value):
 
 
 window_size_seconds = 15  # change this value to adjust window size
-prepped_data = DataPrep.fetch_data(working_directory, database_folder, sensor_folder, csv_log_file)
+prepped_data = dataprep.fetch_data(working_directory, database_folder, sensor_folder, csv_log_file)
 master_data_set = {}
 
 for key_patient_id, value_data in prepped_data.items():
@@ -47,7 +47,7 @@ for key_patient_id, value_data in prepped_data.items():
             for sensorfile in sensor_info:
                 file_path = sensorfile['filepath']
                 sensor_type = sensorfile['type']
-                features = SensorFileProcessor.process_data(sensor_type, file_path, window_start_time, window_end_time)
+                features = sensorprocessor.process_data(sensor_type, file_path, window_start_time, window_end_time)
                 master_data_sensors[sensor_type] = features
                 sensors_processed[sensor_type] = True
 
@@ -63,12 +63,12 @@ for key_patient_id, value_data in prepped_data.items():
                 for missing_sensor in missing_sensor_types:
                     # establish missing file type (triaxial or discrete?)
                     # create fake data depending on sensor type and save
-                    if missing_sensor in SensorFileProcessor.sensors_discrete:
-                        fake_data = SensorFileProcessor.produce_empty_discrete_sensor_dict()
+                    if missing_sensor in sensorprocessor.sensors_discrete:
+                        fake_data = sensorprocessor.produce_empty_discrete_sensor_dict()
                         master_data_sensors[missing_sensor] = fake_data
 
-                    elif missing_sensor in SensorFileProcessor.sensors_triaxial:
-                        fake_data = SensorFileProcessor.produce_empty_triaxial_sensor_dict()
+                    elif missing_sensor in sensorprocessor.sensors_triaxial:
+                        fake_data = sensorprocessor.produce_empty_triaxial_sensor_dict()
                         master_data_sensors[missing_sensor] = fake_data
 
         # If data exists, save the reminder data and embed the recorded sensor data
@@ -83,5 +83,5 @@ for key_patient_id, value_data in prepped_data.items():
 pickle.dump(master_data_set, open('pickle.p', "wb"))
 
 # Write results to a csv file.
-results = OutputWriter.prepare_data(master_data_set)
-OutputWriter.write_data_to_disk(results)
+results = outputgenerator.prepare_data(master_data_set)
+outputgenerator.write_data_to_disk(results)

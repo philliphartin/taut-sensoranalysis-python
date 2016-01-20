@@ -5,10 +5,10 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-import HiddenEmail
+import hidden
 
-gmail_user = HiddenEmail.__email__
-gmail_pwd = HiddenEmail.__password__
+gmail_user = hidden.__email__
+gmail_pwd = hidden.__password__
 
 
 def mail(to, subject, text, attach=None):
