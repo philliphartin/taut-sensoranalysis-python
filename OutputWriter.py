@@ -1,7 +1,7 @@
 import csv
-import pickle
-import time
 from collections import OrderedDict
+
+import time
 
 from arff import arff
 
@@ -195,14 +195,26 @@ def convert_ordered_csv_to_weka(csv_ord_filepath):
         else:
             attributes.append((attribute, 'REAL'))
 
+    # Get index of acknowledged data
+    count_acknowledged = 0
+    count_missed = 0
+    acknowledged_index = headers.index("acknowledged")
+    for row in data:
+        if row[acknowledged_index] == 'True':
+            count_acknowledged += 1
+        else:
+            count_missed += 1
+
+    print('Total Reminders Saved: ' + str(count_acknowledged + count_missed))
+    print('Acknowledged: ' + str(count_acknowledged) + ' / Missed: ' + str(count_missed))
+
     write_weka_file_for_cohort(data, attributes)
 
     # Write Weka format file for each user
     write_weka_file_for_each_user(data, attributes)
 
-
 # FOR DEBUGGING
 # # # Use pickle to import object saved to disk
-master_data_set = pickle.load(open('pickle.p', "rb"))
-results = prepare_data(master_data_set)
-write_data_to_disk(results)
+# master_data_set = pickle.load(open('pickle.p', "rb"))
+# results = prepare_data(master_data_set)
+# write_data_to_disk(results)

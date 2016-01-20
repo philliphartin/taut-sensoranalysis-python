@@ -6,6 +6,7 @@ import numpy as np
 sensors_triaxial = ('accelerometer', 'magnetic')
 sensors_discrete = ('light', 'proximity')
 
+
 def rms(x, axis=None):
     return np.sqrt(np.mean(x ** 2, axis=axis))
 
@@ -135,7 +136,6 @@ def window_index_conditions_valid(start, end):
 
 def process_triaxial(file_path, window_start_time, window_end_time):
     with open(file_path) as csv_sensorfile:
-        # print('Opening: ' + file_path)
 
         # dictionary to hold features
         features = {}
@@ -198,7 +198,6 @@ def process_triaxial(file_path, window_start_time, window_end_time):
 
 def process_discrete(file_path, window_start_time, window_end_time):
     with open(file_path) as csv_sensorfile:
-        print('Opening: ' + file_path)
 
         sensorfile = csv.reader(csv_sensorfile, delimiter=',', quotechar='|')
 
