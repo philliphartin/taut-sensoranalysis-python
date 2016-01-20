@@ -4,8 +4,9 @@ import os
 import FileChecker
 import SensorFileProcessor
 
+
 # manual user list
-# id_list = ['5596']
+# id_list = ['465']
 
 
 def fetch_data(working_directory, database_folder, sensor_folder, csv_log_file):

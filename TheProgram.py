@@ -42,8 +42,7 @@ for key_patient_id, value_data in prepped_data.items():
 
             # Iterate through the list of sensors
             sensors_processed = {'accelerometer': False, 'magnetic': False,
-                                 'gyroscope': False, 'light': False,
-                                 'proximity': False, 'temp': False}
+                                 'light': False,'proximity': False}
 
             for sensorfile in sensor_info:
                 file_path = sensorfile['filepath']

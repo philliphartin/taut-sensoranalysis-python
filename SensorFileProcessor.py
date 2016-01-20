@@ -3,9 +3,8 @@ import csv
 
 import numpy as np
 
-sensors_triaxial = ('accelerometer', 'magnetic', 'gyroscope')
-sensors_discrete = ('light', 'proximity', 'temp')
-
+sensors_triaxial = ('accelerometer', 'magnetic')
+sensors_discrete = ('light', 'proximity')
 
 def rms(x, axis=None):
     return np.sqrt(np.mean(x ** 2, axis=axis))
@@ -48,7 +47,12 @@ def produce_empty_stats_dictionary():
               'rng': '?',
               'rms': '?',
               'percentile_25': '?',
-              'percentile_75': '?'}
+              'percentile_75': '?',
+              'sma_sim': '?',
+              'sma_adv': '?',
+              'sma_sim_abs': '?',
+              'sma_adv_abs': '?'}
+
     return values
 
 
@@ -79,6 +83,13 @@ def calc_stats_for_data_stream_as_dictionary(axis_data):
     data_rms = rms(axis_data)
     data_percentile_25 = np.percentile(axis_data, 25)
     data_percentile_75 = np.percentile(axis_data, 75)
+    data_sma_all = calc_sma(axis_data)
+
+    # calculate signal magnitude area
+    sma_sim = data_sma_all[0]
+    sma_adv = data_sma_all[1]
+    sma_sim_abs = data_sma_all[2]
+    sma_adv_abs = data_sma_all[3]
 
     values = {'mean': data_mean,
               'med': data_med,
@@ -90,7 +101,12 @@ def calc_stats_for_data_stream_as_dictionary(axis_data):
               'rng': data_rng,
               'rms': data_rms,
               'percentile_25': data_percentile_25,
-              'percentile_75': data_percentile_75}
+              'percentile_75': data_percentile_75,
+              'sma_sim': sma_sim,
+              'sma_adv': sma_adv,
+              'sma_sim_abs': sma_sim_abs,
+              'sma_adv_abs': sma_adv_abs
+              }
 
     # FFT Frequency
     # fourier = np.fft.fft(axis_data)
@@ -237,3 +253,25 @@ def get_magnitude(x, y, z):
     # find sqr root for magnitude
     xyz_mag = np.sqrt(xyz_sq)
     return xyz_mag
+
+
+def calc_sma_for_window(data):
+    return np.sum(data) / len(data)
+
+
+def calc_sma_adv_for_window(data):
+    return np.sum(data - np.mean(data) / len(data))
+
+
+def calc_absolutes_for_list(list):
+    return ([abs(i) for i in list])
+
+
+def calc_sma(data):
+    sma_sim = calc_sma_for_window(data)
+    sma_adv = calc_sma_adv_for_window(data)
+
+    sma_sim_abs = calc_sma_for_window(calc_absolutes_for_list(data))
+    sma_adv_abs = calc_sma_adv_for_window(calc_absolutes_for_list(data))
+
+    return sma_sim, sma_adv, sma_sim_abs, sma_adv_abs
