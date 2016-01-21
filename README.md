@@ -12,15 +12,21 @@ The sensor data is then paired with usage data from an external database for dat
 
 The program works in the following manner:
 
-1. Reads a csv file containing reminder data from external database
-2. Creates dictionary of users and reminder data
-3. Uses dictionary to iterates raw sensor files looking for matching timestamps
-4. When match is found sensor file is processed
-5. Establishes cutoff indexes based on defined window length
-6. Produces descriptive statistics for windowed signal, incl. rms (root mean square), svm (signal vector magnitude)
-7. Writes the features to a sorted and labelled external csv file for further analysis (Weka, Hadoop, etc.)
-8. Imports CSV file and then outputs a Weka .arff file
+1. List of desired window lengths are input
+2. Reads a csv file containing reminder data from external database
+3. Creates dictionary of users and reminder data
+4. Uses dictionary to iterates raw sensor files looking for matching timestamps
+5. When match is found sensor file is processed
+6. Establishes cutoff indexes based on defined window length
+7. Strips data into axis components for window length, and generates a component magnitude signal
+8. Applies a median filter to resulting signals (IF continuous, i.e. Accelerometer, Magnetometer)
+9. Produces features based on descriptive statistics for windowed signal (mean, max, min, var, std, rms, etc.)
+10. Writes the features to a sorted and labelled external csv file for  analysis from third party tools (Weka, Hadoop, etc.)
+11. Re-Imports CSV file and then formats t a Weka .arff file, ready for direct import.
 
 ## Dependencies
 * NumPy ([link](http://www.numpy.org))
 * SciPy ([link](http://www.scipy.org))
+
+### Disclaimer
+Code produced during last week of PhD enrollment, and first time using python. Apologies for hackish approaches here and there. Will tidy up later!
