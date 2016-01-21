@@ -1,6 +1,6 @@
 import pickle
 
-import dataprep
+import dataprepper
 import outputgenerator
 import sensorprocessor
 
@@ -18,7 +18,7 @@ def find_key(input_dict, value):
     return {k for k, v in input_dict.items() if v == value}
 
 
-prepped_data = dataprep.fetch_data(working_directory, database_folder, sensor_folder, csv_log_file)
+prepped_data = dataprepper.fetch_data(working_directory, database_folder, sensor_folder, csv_log_file)
 master_data = {}
 
 # For each window length, produce the data

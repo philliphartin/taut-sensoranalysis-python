@@ -3,14 +3,13 @@ import os
 
 import sensorprocessor
 
-
-# manual user list
-id_list = ['465']
+# debug manual user list
+# id_list = ['465']
 
 
 def fetch_data(working_directory, database_folder, sensor_folder, csv_log_file):
     # Get list of users from sensor directory folder names
-    # id_list = next(os.walk(working_directory + sensor_folder))[1]
+    id_list = next(os.walk(working_directory + sensor_folder))[1]
 
     # Read in csv file
     # create dictionary using the first row as keys
