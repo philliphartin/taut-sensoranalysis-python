@@ -4,21 +4,22 @@ from collections import OrderedDict
 
 from arff import arff
 
+out_dir = ['']
+
 
 def get_timestamp():
     timestr = time.strftime("%Y%m%d-%H%M")
     return timestr
 
 
-def create_time_folder():
+def create_output_folders(windowlength):
     import os
-    newpath = 'output/' + get_timestamp()
+    newpath = 'output/' + str(windowlength)
     if not os.path.exists(newpath):
         os.makedirs(newpath)
+
+    out_dir[0] = newpath
     return newpath
-
-
-out_dir = create_time_folder()
 
 
 def traverse(d, sep='_', _prefix=''):
@@ -59,9 +60,9 @@ def prepare_data(master_data_set):
     return array
 
 
-def write_data_to_disk(data):
+def write_data_to_disk(data, windowlength):
     try:
-        csv_raw_filepath = write_to_csv(data)
+        csv_raw_filepath = write_to_csv(data, windowlength)
     except Exception as e:
         print(e)
     else:
@@ -69,8 +70,8 @@ def write_data_to_disk(data):
         convert_ordered_csv_to_weka(csv_ord_filepath)
 
 
-def write_to_csv(data):
-    filepath = out_dir + '/raw.csv'
+def write_to_csv(data, windowlength):
+    filepath = create_output_folders(windowlength) + '/raw.csv'
 
     with open(filepath, 'w') as csvfile:
         ordered_fieldnames = OrderedDict(data[0])
@@ -95,7 +96,7 @@ def convert_raw_csv_to_ordered(csv_raw_filepath):
     # read in previously generated csv feature list
     # get the headers, and order them
 
-    filepath = out_dir + '/ordered.csv'
+    filepath = out_dir[0] + '/ordered.csv'
 
     with open(csv_raw_filepath) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -126,7 +127,7 @@ def write_weka_file_for_cohort(data, attributes):
         'attributes': attributes,
         'data': data,
     }
-    f = open(out_dir + '/cohort.arff', 'w')
+    f = open(out_dir[0] + '/cohort.arff', 'w')
     f.write(arff.dumps(weka_data))
     f.close()
 
@@ -158,7 +159,7 @@ def write_weka_file_for_each_user(data, attributes):
         }
 
         # Write Weka formatted file for entire cohort
-        f = open(out_dir + '/' + user + '.arff', 'w')
+        f = open(out_dir[0] + '/' + user + '.arff', 'w')
         f.write(arff.dumps(weka_data))
         f.close()
 

@@ -128,11 +128,6 @@ def calc_stats_for_data_stream_as_dictionary(axis_data):
               'sma_adv_abs': sma_adv_abs
               }
 
-    # FFT Frequency
-    # fourier = np.fft.fft(axis_data)
-    # n = axis_data.size
-    # timestep = 0.1
-    # freq = np.fft.fftfreq(n, d=timestep)
     return values
 
 

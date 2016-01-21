@@ -11,77 +11,84 @@ sensor_folder = '/SensorRecordings'
 database_folder = '/ServerDatabase'
 csv_log_file = '/ServerDatabase_2015_11_28_cleaned.csv'
 
-
-# csv_log_file = '/example.csv'
+windowlengths = [30, 20, 15, 10]  # Window lengths in seconds to test
 
 
 def find_key(input_dict, value):
     return {k for k, v in input_dict.items() if v == value}
 
 
-window_size_seconds = 15  # change this value to adjust window size
 prepped_data = dataprep.fetch_data(working_directory, database_folder, sensor_folder, csv_log_file)
-master_data_set = {}
+master_data = {}
 
-for key_patient_id, value_data in prepped_data.items():
+# For each window length, produce the data
+for windowlength in windowlengths:
+    all_users_data = {}
 
-    master_data_user = []
+    for key_patient_id, value_data in prepped_data.items():
 
-    for reminders in value_data:
+        user_data = []
 
-        master_data_sensors = {}
+        for reminders in value_data:
 
-        for key_reminder, value_reminder in reminders.items():
-            sensor_info = value_reminder['sensor_info']
-            unixtime = value_reminder['unixtime']
-            acknowledged = value_reminder['acknowledged']
+            master_data_sensors = {}
 
-            # Establish timestamps for windows
-            window_end_time = int(unixtime)  # convert to int for analysis later
-            window_start_time = window_end_time - window_size_seconds
+            for key_reminder, value_reminder in reminders.items():
+                sensor_info = value_reminder['sensor_info']
+                unixtime = value_reminder['unixtime']
+                acknowledged = value_reminder['acknowledged']
 
-            # Iterate through the list of sensors
-            sensors_processed = {'accelerometer': False, 'magnetic': False,
-                                 'light': False,'proximity': False}
+                # Establish timestamps for windows
+                window_end_time = int(unixtime)  # convert to int for analysis later
+                window_start_time = window_end_time - windowlength
 
-            for sensorfile in sensor_info:
-                file_path = sensorfile['filepath']
-                sensor_type = sensorfile['type']
-                features = sensorprocessor.process_data(sensor_type, file_path, window_start_time, window_end_time)
-                master_data_sensors[sensor_type] = features
-                sensors_processed[sensor_type] = True
+                # Iterate through the list of sensors
+                sensors_processed = {'accelerometer': False, 'magnetic': False,
+                                     'light': False, 'proximity': False}
 
-            # Create list of missing sensor types
-            missing_sensor_types = find_key(sensors_processed, False)
+                for sensorfile in sensor_info:
+                    file_path = sensorfile['filepath']
+                    sensor_type = sensorfile['type']
+                    features = sensorprocessor.process_data(sensor_type, file_path, window_start_time, window_end_time)
+                    master_data_sensors[sensor_type] = features
+                    sensors_processed[sensor_type] = True
 
-            # Generate fake data for any missing sensors processed.
-            if missing_sensor_types:
-                #  TODO: IF ALL MISSING, SKIP ENTIRE THING
-                if len(sensors_processed) == len(missing_sensor_types):
-                    continue
+                # Create list of missing sensor types
+                missing_sensor_types = find_key(sensors_processed, False)
 
-                for missing_sensor in missing_sensor_types:
-                    # establish missing file type (triaxial or discrete?)
-                    # create fake data depending on sensor type and save
-                    if missing_sensor in sensorprocessor.sensors_discrete:
-                        fake_data = sensorprocessor.produce_empty_discrete_sensor_dict()
-                        master_data_sensors[missing_sensor] = fake_data
+                # Generate fake data for any missing sensors processed.
+                if missing_sensor_types:
+                    #  TODO: IF ALL MISSING, SKIP ENTIRE THING
+                    if len(sensors_processed) == len(missing_sensor_types):
+                        continue
 
-                    elif missing_sensor in sensorprocessor.sensors_triaxial:
-                        fake_data = sensorprocessor.produce_empty_triaxial_sensor_dict()
-                        master_data_sensors[missing_sensor] = fake_data
+                    for missing_sensor in missing_sensor_types:
+                        # establish missing file type (triaxial or discrete?)
+                        # create fake data depending on sensor type and save
+                        if missing_sensor in sensorprocessor.sensors_discrete:
+                            fake_data = sensorprocessor.produce_empty_discrete_sensor_dict()
+                            master_data_sensors[missing_sensor] = fake_data
 
-        # If data exists, save the reminder data and embed the recorded sensor data
-        if master_data_sensors:
-            reminder_to_save = {'acknowledged': acknowledged, 'unixtime': unixtime, 'sensors': master_data_sensors}
-            master_data_user.append(reminder_to_save)
+                        elif missing_sensor in sensorprocessor.sensors_triaxial:
+                            fake_data = sensorprocessor.produce_empty_triaxial_sensor_dict()
+                            master_data_sensors[missing_sensor] = fake_data
+
+            # If data exists, save the reminder data and embed the recorded sensor data
+            if master_data_sensors:
+                reminder_to_save = {'acknowledged': acknowledged, 'unixtime': unixtime, 'sensors': master_data_sensors}
+                user_data.append(reminder_to_save)
 
             # Save all the data for the user and append to master data set list
-    master_data_set[key_patient_id] = master_data_user
+            all_users_data[key_patient_id] = user_data
+
+    master_data[windowlength] = all_users_data
 
 # Use pickle to save object to local disk for faster testing
-pickle.dump(master_data_set, open('pickle.p', "wb"))
+pickle.dump(master_data, open('pickle.p', "wb"))
 
-# Write results to a csv file.
-results = outputgenerator.prepare_data(master_data_set)
-outputgenerator.write_data_to_disk(results)
+# master_data = pickle.load(open('pickle.p', "rb"))
+
+for window, data in master_data.items():
+    # Write results to a csv file.
+    results = outputgenerator.prepare_data(data)
+    outputgenerator.write_data_to_disk(results, window)
