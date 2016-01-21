@@ -1,5 +1,9 @@
 import numpy as np
 
+def calibrate_median(data):
+    medianvalue = np.median(data)
+    return np.array([x - medianvalue for x in data])
+
 
 def medfilt(x, k):
     # Apply a length-k median filter to a 1D array x.

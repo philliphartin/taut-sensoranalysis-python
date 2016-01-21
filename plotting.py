@@ -2,11 +2,14 @@ import csv
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy as sci
+from scipy import signal
 
 import sensorprocessor as sp
 import signalfilters as mf
 
-sensorfile = '/Users/philliphartin/TAUT/SensorRecordings/577/6/577_1396047090_Accelerometer.csv'
+csv_missed = '/Users/philliphartin/TAUT/SensorRecordings/1196/1196_1393385457_Accelerometer.csv'
+csv_acknowledged = '/Users/philliphartin/TAUT/SensorRecordings/1196/1196_1393288203_Accelerometer.csv'
 
 
 def import_sensorfile(filepath):
@@ -29,7 +32,7 @@ def import_sensorfile(filepath):
         return sensor_rows
 
 
-def plot_timeseries(data):
+def process_input(data):
     t_series = []
     x_series = []
     y_series = []
@@ -50,36 +53,48 @@ def plot_timeseries(data):
         z_series.append(z)
         mag_series.append(sp.get_magnitude(x, y, z))
 
-    # mag_fft = np.fft.fft(mag_series)
-
     numpymag = np.array(mag_series)
 
-    filtered = mf.medfilt(numpymag, 11)
+    return numpymag
 
-    plt.plot(mag_series, )
-    # plt.plot(mf.medfilt(numpymag, 11), 'b')
-    plt.plot(mf.medfilt(numpymag, 15), 'r', linewidth=3.3)
+
+def calibrate_median(data):
+    medianvalue = np.median(data)
+    return np.array([x - medianvalue for x in data])
+
+
+def cut_data_in_half(data):
+    length = len(data)
+    midpoint = length/2
+    startpoint = midpoint - 400
+    return data[startpoint:midpoint]
+
+def plot_against(missed, acknowledged):
+    sensor_miss = import_sensorfile(missed)
+    sensor_ack = import_sensorfile(acknowledged)
+
+    mag_miss = cut_data_in_half(process_input(sensor_miss))
+    mag_ack = cut_data_in_half(process_input(sensor_ack))
+    mag_miss_filter = sci.signal.medfilt(mag_miss, 21)
+    mag_ack_filter = sci.signal.medfilt(mag_ack, 21)
+
+    # shift zero
+    medianvalue = np.median(mag_miss)
+
+    mag_miss_cal = calibrate_median(mag_miss)
+    mag_ack_cal = calibrate_median(mag_ack)
+
+    mag_miss_cal_filter = mf.medfilt(mag_miss_cal, 21)
+    mag_ack_cal_filter = mf.medfilt(mag_ack_cal, 21)
+
+    plt.plot(mag_miss_cal, 'b--')
+    plt.plot(mag_ack_cal, 'r--')
+    plt.plot(mag_miss_cal_filter, 'b', linewidth=3.3)
+    plt.plot(mag_ack_cal_filter, 'r', linewidth=3.3)
+
+    # plt.plot(mf.medfilt(numpymag, 15), 'r', linewidth=3.3)
 
     plt.show()
 
-    # print(mag_fft)
-    # print(sma)
-    # print(sma_adv)
-    # print(abs_sma)
-    # print(abs_sma_adv)
 
-    # plt.plot(mag_fft)
-    # plt.plot(t_series, mag_series)
-    # # plt.plot(t_series, x_series)
-    # # plt.plot(t_series, y_series)
-    # # plt.plot(t_series, z_series)
-    #
-    # plt.xlabel('time (ms)')
-    # plt.ylabel('Acceleration (m/s)')
-    # plt.title('About as simple as it gets, folks')
-    # plt.grid(True)
-    # plt.savefig("test.png")
-    # plt.show()
-
-
-plot_timeseries(import_sensorfile(sensorfile))
+plot_against(csv_missed, csv_acknowledged)
