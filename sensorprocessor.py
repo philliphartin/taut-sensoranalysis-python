@@ -3,6 +3,8 @@ import csv
 
 import numpy as np
 
+import signalfilters as mf
+
 sensors_triaxial = ('accelerometer', 'magnetic')
 sensors_discrete = ('light', 'proximity')
 
@@ -81,7 +83,13 @@ def produce_empty_triaxial_sensor_dict(dictionary={}):
     dictionary.update({'x': produce_empty_stats_dictionary(),
                        'y': produce_empty_stats_dictionary(),
                        'z': produce_empty_stats_dictionary(),
-                       'xyz': produce_empty_stats_dictionary()})
+                       'xyz': produce_empty_stats_dictionary(),
+                       'x_fil_med': produce_empty_stats_dictionary(),
+                       'y_fil_med': produce_empty_stats_dictionary(),
+                       'z_fil_med': produce_empty_stats_dictionary(),
+                       'xyz_fil_med': produce_empty_stats_dictionary()
+                       })
+
     return dictionary
 
 
@@ -194,16 +202,33 @@ def process_triaxial(file_path, window_start_time, window_end_time):
                 z_win = sensor_rows[window_start_index:window_end_index, 3]
                 xyz_win = get_magnitude(x_win, y_win, z_win)
 
+                # Pass through a median filter
+                steplength = 11  # must be an odd number
+
+                x_win_medfil = mf.medfilt(x_win, steplength)
+                y_win_medfil = mf.medfilt(y_win, steplength)
+                z_win_medfil = mf.medfilt(z_win, steplength)
+                xyz_win_medfil = mf.medfilt(xyz_win, steplength)
+
                 # calculate stats
                 stats_x = calc_stats_for_data_stream_as_dictionary(x_win)
                 stats_y = calc_stats_for_data_stream_as_dictionary(y_win)
                 stats_z = calc_stats_for_data_stream_as_dictionary(z_win)
                 stats_xyz = calc_stats_for_data_stream_as_dictionary(xyz_win)
+                # filtered stats
+                stats_x_med = calc_stats_for_data_stream_as_dictionary(x_win_medfil)
+                stats_y_med = calc_stats_for_data_stream_as_dictionary(y_win_medfil)
+                stats_z_med = calc_stats_for_data_stream_as_dictionary(z_win_medfil)
+                stats_xyz_med = calc_stats_for_data_stream_as_dictionary(xyz_win_medfil)
 
                 features.update({'x': stats_x,
                                  'y': stats_y,
                                  'z': stats_z,
-                                 'xyz': stats_xyz})
+                                 'xyz': stats_xyz,
+                                 'x_fil_med': stats_x_med,
+                                 'y_fil_med': stats_y_med,
+                                 'z_fil_med': stats_z_med,
+                                 'xyz_fil_med': stats_xyz_med})
             else:
                 features = produce_empty_triaxial_sensor_dict(features)
 

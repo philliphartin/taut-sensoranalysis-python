@@ -56,7 +56,7 @@ def plot_timeseries(data):
 
     filtered = mf.medfilt(numpymag, 11)
 
-    plt.plot(mag_series,)
+    plt.plot(mag_series, )
     # plt.plot(mf.medfilt(numpymag, 11), 'b')
     plt.plot(mf.medfilt(numpymag, 15), 'r', linewidth=3.3)
 
@@ -80,5 +80,6 @@ def plot_timeseries(data):
     # plt.grid(True)
     # plt.savefig("test.png")
     # plt.show()
+
 
 plot_timeseries(import_sensorfile(sensorfile))
