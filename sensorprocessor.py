@@ -88,8 +88,8 @@ def produce_empty_triaxial_sensor_dict(dictionary={}):
                        'y_median_filter': produce_empty_stats_dictionary(),
                        'z_median_filter': produce_empty_stats_dictionary(),
                        'svm_median_filter': produce_empty_stats_dictionary(),
-                       'stats_svm_calibrated': produce_empty_stats_dictionary(),
-                       'stats_svm_median_filter_calibrated': produce_empty_stats_dictionary()
+                       'svm_median_filter_calibrated_min': produce_empty_stats_dictionary(),
+                       'svm_median_filter_calibrated_med': produce_empty_stats_dictionary()
                        })
 
     return dictionary
@@ -204,16 +204,16 @@ def process_triaxial(file_path, window_start_time, window_end_time):
                 z_win = sensor_rows[window_start_index:window_end_index, 3]
                 svm_win = get_magnitude(x_win, y_win, z_win)
 
-                # Pass through a median filter
-                kernal = 21  # must be an odd number
-                x_median_filter = mf.medfilt(x_win, kernal)
-                y_median_filter = mf.medfilt(y_win, kernal)
-                z_median_filter = mf.medfilt(z_win, kernal)
-                svm_median_filter = mf.medfilt(svm_win, kernal)
+                # Pass through a median filter first using kernel of 21
+                kernel = 15  # must be an odd number
+                x_median_filter = mf.medfilt(x_win, kernel)
+                y_median_filter = mf.medfilt(y_win, kernel)
+                z_median_filter = mf.medfilt(z_win, kernel)
+                svm_median_filter = mf.medfilt(svm_win, kernel)
 
-                # Calibrate SVM using median values
-                svm_calibrated = mf.calibrate_median(svm_win)
-                svm_median_filter_calibrated = mf.calibrate_median(svm_median_filter)
+                # Calibrate filtered SVM using min & median values
+                svm_median_filter_calibrated_min = mf.calibrate_minimum(svm_median_filter)
+                svm_median_filter_calibrated_med = mf.calibrate_median(svm_median_filter)
 
                 # calculate stats
                 stats_x = calc_stats_for_data_stream_as_dictionary(x_win)
@@ -224,9 +224,10 @@ def process_triaxial(file_path, window_start_time, window_end_time):
                 stats_y_median_filter = calc_stats_for_data_stream_as_dictionary(y_median_filter)
                 stats_z_median_filter = calc_stats_for_data_stream_as_dictionary(z_median_filter)
                 stats_svm_median_filter = calc_stats_for_data_stream_as_dictionary(svm_median_filter)
-                stats_svm_calibrated = calc_stats_for_data_stream_as_dictionary(svm_calibrated)
-                stats_svm_median_filter_calibrated = calc_stats_for_data_stream_as_dictionary(
-                        svm_median_filter_calibrated)
+                stats_svm_median_filter_calibrated_min = calc_stats_for_data_stream_as_dictionary(
+                        svm_median_filter_calibrated_min)
+                stats_svm_median_filter_calibrated_med = calc_stats_for_data_stream_as_dictionary(
+                        svm_median_filter_calibrated_med)
 
                 features.update({'x': stats_x,
                                  'y': stats_y,
@@ -236,8 +237,8 @@ def process_triaxial(file_path, window_start_time, window_end_time):
                                  'y_median_filter': stats_y_median_filter,
                                  'z_median_filter': stats_z_median_filter,
                                  'svm_median_filter': stats_svm_median_filter,
-                                 'stats_svm_calibrated': stats_svm_calibrated,
-                                 'stats_svm_median_filter_calibrated': stats_svm_median_filter_calibrated
+                                 'svm_median_filter_calibrated_min': stats_svm_median_filter_calibrated_min,
+                                 'svm_median_filter_calibrated_med': stats_svm_median_filter_calibrated_med
                                  })
             else:
                 features = produce_empty_triaxial_sensor_dict(features)

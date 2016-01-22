@@ -1,8 +1,14 @@
 import numpy as np
 
+
 def calibrate_median(data):
     medianvalue = np.median(data)
     return np.array([x - medianvalue for x in data])
+
+
+def calibrate_minimum(data):
+    minimumvalue = np.min(data)
+    return np.array([x - minimumvalue for x in data])
 
 
 def medfilt(x, k):

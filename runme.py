@@ -11,7 +11,7 @@ sensor_folder = '/SensorRecordings'
 database_folder = '/ServerDatabase'
 csv_log_file = '/ServerDatabase_2015_11_28_cleaned.csv'
 
-windowlengths = [30, 20, 15, 10]  # Window lengths in seconds to test
+windowlengths = [30, 20, 15]  # Window lengths in seconds to test
 
 
 def find_key(input_dict, value):
@@ -23,9 +23,16 @@ master_data = {}
 
 # For each window length, produce the data
 for windowlength in windowlengths:
+    print('Processing data for window length: ' + str(windowlength))
     all_users_data = {}
 
+    processed_count = 0
     for key_patient_id, value_data in prepped_data.items():
+        processed_count += 1
+
+        print(
+                str(processed_count) + '/' + str(len(prepped_data)) + ' - Processing data for user ' + str(
+                        key_patient_id))
 
         user_data = []
 
