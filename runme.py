@@ -11,7 +11,7 @@ sensor_folder = '/SensorRecordings'
 database_folder = '/ServerDatabase'
 csv_log_file = '/ServerDatabase_2015_11_28_cleaned.csv'
 
-windowlengths = [30, 20, 15]  # Window lengths in seconds to test
+windowlengths = [90, 60, 45]  # Window lengths in seconds to test
 
 
 def find_key(input_dict, value):

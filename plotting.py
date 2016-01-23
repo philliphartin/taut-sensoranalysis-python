@@ -116,12 +116,12 @@ def window_data(data):
     length = len(data)
     # first 2/3rds of recording
     endpoint = length / 10
-    endpoint *= 6.5
-    startpoint = endpoint - 800
+    endpoint *= 7
+    startpoint = endpoint - 100
     return data[startpoint:endpoint]
 
 
-def write_to_csv(data):
+def write_to_csv(data, filename):
     import csv
 
     # Get headers from dictionary
@@ -130,7 +130,7 @@ def write_to_csv(data):
     for key, value in example.items():
         header.append(key)
 
-    with open('window_stats.csv', 'w') as csvfile:
+    with open(str(filename) + '.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=sorted(header))
 
         writer.writeheader()
@@ -161,7 +161,7 @@ def plot_against(missed, acknowledged):
     mag_ack_cal = mf.calibrate_median(mag_ack)
     mag_ack_cal_filter = mf.calibrate_median(mag_ack_filter)
 
-    # STATS
+    # PLOT
     ylimit_top = [-5, 10]
     ylimits_filtered = [-4, 4]
     ylimits_filtered_bottom = [-1.5, 1.5]
@@ -211,6 +211,82 @@ def plot_against(missed, acknowledged):
     plt.plot(mag_ack_cal_filter, label='Acknowledged (Filtered)')
     plt.legend(loc='lower left')
     plt.suptitle("Applying Filters to Signals")
+    plt.show()
+
+
+def plot_singlewave(file):
+    sensor = import_sensorfile(file)
+    sensor_processed = process_input(sensor)
+    timestamps = []
+    [timestamps.append(str(item[0])) for item in sensor]
+
+    sensor_processed_calibrated = mf.calibrate_median(sensor_processed)
+    sensor_filtered = mf.medfilt(sensor_processed_calibrated, 3)
+
+    plt.plot(sensor_filtered, linewidth='0.8')
+    plt.xlim([0, 12000])
+    plt.ylim([-5, 5])
+    plt.ylabel('Acceleration (g)')
+    plt.xlabel('Time (ms)')
+    # plt.xticks(sensor_filtered, timestamps, rotation='vertical')
+    plt.show()
+
+
+def plot_example(missed, acknowledged):
+    sensor_miss = import_sensorfile(missed)
+    sensor_ack = import_sensorfile(acknowledged)
+
+    # Window data
+    mag_miss = window_data(process_input(sensor_miss))
+    mag_ack = window_data(process_input(sensor_ack))
+
+    # Window data
+    mag_miss = window_data(process_input(sensor_miss))
+    mag_ack = window_data(process_input(sensor_ack))
+
+    # Filter setup
+    kernel = 15
+
+    # apply filter
+    mag_miss_filter = sci.medfilt(mag_miss, kernel)
+    mag_ack_filter = sci.medfilt(mag_ack, kernel)
+
+    # calibrate data
+    mag_miss_cal = mf.calibrate_median(mag_miss)
+    mag_miss_cal_filter = mf.calibrate_median(mag_miss_filter)
+
+    mag_ack_cal = mf.calibrate_median(mag_ack)
+    mag_ack_cal_filter = mf.calibrate_median(mag_ack_filter)
+
+    # PLOT
+    sns.set_style("white")
+    current_palette = sns.color_palette('muted')
+    sns.set_palette(current_palette)
+
+    plt.figure(0)
+
+    # Plot RAW missed and acknowledged reminders
+    ax1 = plt.subplot2grid((2, 1), (0, 0))
+    plt.ylim([-1.5, 1.5])
+    plt.ylabel('Acceleration (g)')
+    plt.plot(mag_miss_cal, label='Recording 1')
+    plt.legend(loc='lower left')
+
+    ax2 = plt.subplot2grid((2, 1), (1, 0))
+    # Plot Missed Reminder RAW
+    plt.ylim([-1.5, 1.5])
+    plt.ylabel('Acceleration (g)')
+    plt.xlabel('t (ms)')
+    plt.plot(mag_ack_cal, linestyle='-', label='Recording 2')
+    plt.legend(loc='lower left')
+
+    # CALC AND SAVE STATS
+    stats_one = sp.calc_stats_for_data_stream_as_dictionary(mag_miss_cal)
+    stats_two = sp.calc_stats_for_data_stream_as_dictionary(mag_ack_cal)
+
+    data = [stats_one, stats_two]
+    write_to_csv(data, 'example_waves')
+
     plt.show()
 
 
@@ -301,4 +377,6 @@ def plot_kernal_length_experiment(missed, acknowledged):
 
 
 # plot_against(csv_missed, csv_acknowledged)
-plot_kernal_length_experiment(csv_missed, csv_acknowledged)
+# plot_kernal_length_experiment(csv_missed, csv_acknowledged)
+# plot_example(csv_missed, csv_acknowledged)
+# plot_singlewave(csv_acknowledged)
